@@ -1,0 +1,63 @@
+.recordgroup {
+   display: block;
+   width: 98%;
+   text-align: center;
+}
+
+.navcontainer {
+   display: block;
+   position: relative;
+   width: 100%;
+}
+
+.nav {
+   /*
+   max-width: 33%;
+   max-height: 33%;
+   */
+   width: 20%;
+   margin: 0 2em;
+   text-align: center;
+   display: inline-block;
+   cursor: pointer;
+}
+
+.record {
+   width: 60%;
+   display:inline-block;
+   /*
+   */
+   text-align: center;
+   word-wrap: break-word;
+}
+
+.dst { 
+   position: relative;
+   margin: 1em;
+   /*
+   width: 66%
+   */
+}
+
+.label {
+   display: inline-block;
+   text-align: left;
+   width: 30%;
+   /*
+   width: 2em;
+   width: 200px;
+   */
+   word-wrap: break-word;
+}
+.value {
+   display: inline-block;
+   margin-left: 2em;
+}
+
+.action {
+   display: inline-block;
+   width: 10%;
+   height: 10%;
+   text-align: center;
+   cursor: pointer;
+}

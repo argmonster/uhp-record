@@ -1,0 +1,346 @@
+%define d_globalformpath "/c0/forms/"
+%define d_localformpath "/CUST/forms/"
+
+start uhp_record(parmfile, option, regid, retcode)
+
+parmfile       is x
+option         is x
+regid          is x
+retcode        is b
+
+formpath       is x
+title          is x
+debug          is x
+
+dstgroup[]     is x
+canadd[]       is x
+canupdate[]    is x
+canread[]      is x
+
+l-dst[]        is b
+l-upt          is b
+dst[,]         is x
+label[,]       is x
+val[,]         is x
+new[,]         is x
+-val[]         is x
+
+submit[]       is x
+action[]       is x
+click          is b
+
+json           is x
+
+regdb          is b
+
+l-uhp          is b
+l-client       is b
+
+rmi-lib        is b
+rmi-dst        is x
+rmi-val        is x
+rmi-new        is x
+
+i              is b
+lib-handle     is b
+
+$allowupdate(retcode)
+
+%include inc_sysLibDef
+%global l-upt
+
+'rmi registration
+on rmi "getnextrec" do getnextrec(rmi-lib, rmi-dst)
+'on rmi "update" do update(rmi-lib, rmi-dst, rmi-val, rmi-new)
+on rmi "update" do update(rmi-lib, rmi-dst, rmi-val, rmi-new)
+on rmi "save" do add(rmi-lib, rmi-dst, rmi-val)
+
+'defaults
+regdb = 2
+title = "UHP Record"
+
+retcode = $loadlib(l-uhp, "lib_uhp")
+
+formpath = l-uhp:checkfile(parmfile)
+
+if $charx(formpath,1) = "/" then
+   uhp_option(formpath)
+else
+   getparm(formpath)
+endif
+
+getoption(option)
+
+retcode = $loadlib(l-client, "lib_CLIENT")
+if l-client:pickClient(regid, "Y") > 0 then return endif
+
+i = 0
+do while i++ < $maxarray(dstgroup[])
+   retcode = $loadlib(lib-handle, "lib_DST")
+   l-dst[i] = lib-handle
+   lib-handle:setDSTs(dst[i])
+   lib-handle:read(regid, dst[i])
+   'val[i] = getdata(lib-handle, dst[i])
+   -val[] = getdata(lib-handle, dst[i])
+   if -val[] dp then
+      val[i]  = -val[]
+   endif
+enddo
+
+'use a seperate lib for managing updates
+retcode = $loadlib(l-upt, "lib_DST")
+
+json = putjson(regid, 
+   dstgroup[], 
+   l-dst[], 
+   dst[,], 
+   label[,], 
+   val[,],
+   canadd[],
+   canupdate[],
+   canread[],
+   debug) ', new[,])
+
+'ui
+do while 1 = 1
+   $clear(submit[])
+   retcode = uhp(formpath) 
+   if retcode > 0 then
+      'uhp failed
+      return
+   endif
+   select $endbutton
+      case "CANCEL"  retcode = 0
+                     i = 0
+                     do while i++ < $maxarray(l-dst[])
+                        lib-handle = l-dst[i]
+                        retcode = $unloadlib(lib-handle)
+                     enddo
+                     return
+      case "SUBMIT"  retcode = 0
+                     return
+      case other
+         click = $find("Y", submit[], 1, "F")
+         if click > 0 then
+            call action[click] (parmfile, option, regid, retcode)
+         endif
+   endselect
+enddo
+
+end uhp_record
+
+%include inc_GetParm
+%include inc_GetOption
+%include inc_uhpOption
+%include inc_uhp
+
+function getnextrec(-lib, -dststr) is x
+-lib     is b
+-dststr  is x
+-dst[]   is x
+-val[]   is x
+
+-lib:nextrec()
+
+-dst[] = json.parse(-dststr)
+
+$clear(-val[])
+-val[] = getdata(-lib, -dst[])
+
+getnextrec = json.stringify(-val[])
+
+end getnextrec
+
+
+dynamic function getdata(-lib, -dst[])[] is x
+-lib     is b
+-dst[]   is x
+
+-val[]   is x
+
+-lib:listinfo(-dst[], -val[])
+
+getdata[] = -val[]
+end getdata
+
+dynamic function putjson(-id, -dst-group[], -lib[], 
+   -dst[,], -label[,], -val[,],
+   -add[], -update[], -read[],
+   -debug) is x ', -new[,]) is x
+-id      is x
+-dst-group[]   is x
+-lib[]    is b
+-dst[,]   is x
+-label[,] is x
+-val[,]   is x
+-add[]    is x
+-update[]   is x
+-read[]     is x
+-debug      is x
+
+i        is b
+out      is x
+
+out = "<script>"
+out += "window.gcc = window.gcc || {};"
+out += "window.gcc.data = {id:'" + -id + "',"
+if $uc(-debug) = "Y" then
+   out += "debug:true,"
+endif
+out += "group:["
+
+i = 0
+do while ++i < $maxarray(-dst-group[])
+   out += "{lib:" + -lib[i]
+   out += ",name:'" + -dst-group[i] + "'"
+   if $uc(-add[i]) = "Y" then
+      out += ",addable:true"
+   endif
+   if $uc(-update[i]) = "Y" then
+      out += ",updateable:true"
+   endif
+   if $uc(-read[i]) = "Y" then
+      out += ",readable:true"
+   endif
+   out += ",dst:"
+   i = i
+   -val[i] = -val[i]
+   out += putdstjsonlist(-dst[i], -label[i], -val[i])
+   out += "},"
+enddo
+out += "{lib:" + -lib[i]
+out += ",name:'" + -dst-group[i] + "'"
+   if $uc(-add[i]) = "Y" then
+      out += ",addable:true"
+   endif
+   if $uc(-update[i]) = "Y" then
+      out += ",updateable:true"
+   endif
+   if $uc(-read[i]) = "Y" then
+      out += ",readable:true"
+   endif
+out += ",dst:"
+out += putdstjsonlist(-dst[i], -label[i], -val[i]) ', -new[i])
+out += "}"
+
+out += "]}"
+out += "</script>"
+
+putjson = out
+end putjson
+
+dynamic function putdstjsonlist(-dst[], -label[], -val[]) is x ', -new[]) is x
+-dst[]   is x
+-label[] is x
+-val[]   is x
+'-new[]   is x
+
+i        is b
+out      is x
+
+out = "["
+i = 0
+do while ++i < $maxarray(-dst[])
+   out += "{name:'" + -dst[i] 
+   out += "',label:'" + -label[i]
+   out += "',val:'" + -val[i] 
+   out += "'},"
+   'out += "',newval:'" + -new[i] + "'},"
+enddo
+out += "{name:'" + -dst[i] 
+out += "',label:'" + -label[i]
+out += "',val:'" + -val[i] 
+out += "'}"
+'out += "',newval:'" + -new[i] + "'}"
+out += "]"
+
+putdstjsonlist = out
+end putdstjsonlist
+
+function add(-lib, -dst[], -val[]) is b
+-lib     is b
+-dst[]   is x
+-val[]   is x
+
+if $maxarray(-dst[]) = 1 then
+   -dst[] = json.parse(-dst[1])
+endif
+
+if $maxarray(-val[]) = 1 then
+   -val[] = json.parse(-val[])
+endif
+
+add = -lib:add(,-dst[],-val[])
+
+end add
+
+
+function update(-lib, -dst[], -val[], -new[]) is b
+-lib     is b
+-dst[]   is x
+-val[]   is x
+-new[]   is x
+
+-reg     is x
+
+if $maxarray(-dst[]) = 1 then
+   -dst[] = json.parse(-dst[1])
+endif
+
+if $maxarray(-val[]) = 1 then
+   -val[] = json.parse(-val[1])
+endif
+
+if $maxarray(-new[]) = 1 then
+   -new[] = json.parse(-new[1])
+endif
+
+-reg = -lib:reg()
+
+update = l-upt:st_updatebyvalue(-reg,-dst[], -val[], -dst[], -new[])
+'update = -lib:st_updatebyvalue(,-dst[], -val[], -dst[], -new[])
+
+end update
+
+dynamic function json.parse(string)[] is x
+string   is x
+t        is x
+i        is b
+len      is b
+quote    is x
+
+out[]    is x
+
+$clear(out[])
+quote = x"22"
+
+i = 1
+len = $len(string)
+do while i < len
+   select $charx(string, i)
+      case "["
+        or "]"
+        or ","
+        'or " "
+         i += 1
+      case quote  
+         i += 1
+         t = $parse(string, i, quote)
+         (void)$arrpush(out[], t)
+   endselect
+enddo
+json.parse[] = out[]
+end json.parse
+
+dynamic function json.stringify(arr[]) is x
+arr[]    is x
+out      is x
+
+$clear(out)
+(void)$putds(arr[], out, ",", x"22")
+
+out = "[" + out + "]"
+
+json.stringify = out
+end json.stringify
+   

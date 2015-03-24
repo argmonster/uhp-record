@@ -1,0 +1,65 @@
+<$html uhpver='4'>
+<$body submitlabel='NULL' cancellabel='exit'>
+<link href='$LOCAL/$SYSNAME/css/uhp-record.css' rel='stylesheet' ></link>
+<h1><$literal value='title' /></h1>
+<div data-bind="text: id"></div>
+<div class='section' data-bind="template: { name: 'dst-group', foreach: group }"></div>
+<$literal value='json' />
+<script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+<script src='$LOCAL/$SYSNAME/js/json2.min.js'></script>
+<script src='$LOCAL/$SYSNAME/js/lodash.min.js'></script>
+<script src='$LOCAL/$SYSNAME/js/knockout-3.3.0.min.js'></script>
+
+<script type='text/html' id='dst-group'>
+   <h3 class='title' data-bind="text: name"></h3>
+   <table class='recordgroup'>
+      <tr class='navcontainer'>
+         <td class='nav' data-bind="if: hasprev">
+            <img src='$LOCAL/$SYSNAME/img/arrow_LeftLight.png' data-bind='click: $parent.prev' />
+         </td>
+         <td class='record' >
+            <div class='dst' data-bind="template: { name: 'dst-data', foreach: dst }"></div>
+         </td>
+         <td class='nav' data-bind='if: hasnext'>
+            <img src='$LOCAL/$SYSNAME/img/arrow_RightLight.png' data-bind='click: $parent.next' />
+         </td>
+      </tr>
+      <tr class='actioncontainer'>
+         <td></td>
+         <td class='record'>
+         <span class='action' data-bind='if: pendingupdate'>
+            <img src='$LOCAL/$SYSNAME/img/save.png' 
+               data-bind='click: $parent.update' />
+         </span>
+         <span class='action' data-bind='if: canadd'>
+            <img src='$LOCAL/$SYSNAME/img/plus-icon.png' 
+               data-bind='click: $parent.add' />
+         </span>
+
+         <span class='action' data-bind='if: pendingadd'>
+            <img src='$LOCAL/$SYSNAME/img/save.png' 
+               data-bind='click: $parent.save' />
+         </span>
+         </td>
+         <td></td>
+      </tr>
+
+   </table>
+</script>
+
+<script type='text/html' id='dst-data'>
+   <div class='dst'>
+      <span class='label' data-bind='text:label'></span>
+      <span data-bind='if: $parent.canadd'>
+         <input class='value' type='text' data-bind='textInput: curr'></input>
+      </span>
+      <span data-bind='ifnot: $parent.canadd'>
+         <span class='value' data-bind='text: curr'></span>
+      </span>
+   </div>
+</script>
+
+<script src='$LOCAL/$SYSNAME/js/uhp-record.js'></script>
+
+<$/body>
+<$/html>

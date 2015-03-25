@@ -38,6 +38,7 @@ l-uhp          is b
 l-client       is b
 
 rmi-lib        is b
+rmi-id         is x
 rmi-dst        is x
 rmi-val        is x
 rmi-new        is x
@@ -51,6 +52,7 @@ $allowupdate(retcode)
 %global l-upt
 
 'rmi registration
+on rmi "getrec" do getrec(rmi-lib, rmi-id, rmi-dst)
 on rmi "getnextrec" do getnextrec(rmi-lib, rmi-dst)
 'on rmi "update" do update(rmi-lib, rmi-dst, rmi-val, rmi-new)
 on rmi "update" do update(rmi-lib, rmi-dst, rmi-val, rmi-new)
@@ -81,7 +83,8 @@ do while i++ < $maxarray(dstgroup[])
    l-dst[i] = lib-handle
    lib-handle:setDSTs(dst[i])
    lib-handle:read(regid, dst[i])
-   'val[i] = getdata(lib-handle, dst[i])
+   'an empty array assigned to a row of a 2d array will blank the whole 2d array
+   'so only assign if there is a value
    -val[] = getdata(lib-handle, dst[i])
    if -val[] dp then
       val[i]  = -val[]
@@ -135,6 +138,25 @@ end uhp_record
 %include inc_GetOption
 %include inc_uhpOption
 %include inc_uhp
+
+function getrec(-lib, -id, -dst[]) is x
+-lib     is b
+-id      is x
+-dst[]   is x
+
+-val[]   is x
+if $maxarray(-dst[]) = 1 then
+   -dst[] = json.parse(-dst[1])
+endif
+
+-lib:setDSTs(-dst[])
+-lib:read(-id, -dst[])
+
+-val[] = getdata(-lib, -dst[])
+
+getrec = json.stringify(-val[])
+
+end getrec
 
 function getnextrec(-lib, -dststr) is x
 -lib     is b
@@ -206,8 +228,6 @@ do while ++i < $maxarray(-dst-group[])
       out += ",readable:true"
    endif
    out += ",dst:"
-   i = i
-   -val[i] = -val[i]
    out += putdstjsonlist(-dst[i], -label[i], -val[i], -opt[i])
    out += "},"
 enddo
@@ -232,7 +252,7 @@ out += "</script>"
 putjson = out
 end putjson
 
-dynamic function putdstjsonlist(-dst[], -label[], -val[], -opt[i]) is x ', -new[]) is x
+dynamic function putdstjsonlist(-dst[], -label[], -val[], -opt[]) is x ', -new[]) is x
 -dst[]   is x
 -label[] is x
 -val[]   is x

@@ -22,6 +22,7 @@ l-upt          is b
 dst[,]         is x
 label[,]       is x
 val[,]         is x
+opt[,]         is x
 new[,]         is x
 -val[]         is x
 
@@ -96,6 +97,7 @@ json = putjson(regid,
    dst[,], 
    label[,], 
    val[,],
+   opt[,],
    canadd[],
    canupdate[],
    canread[],
@@ -164,7 +166,7 @@ getdata[] = -val[]
 end getdata
 
 dynamic function putjson(-id, -dst-group[], -lib[], 
-   -dst[,], -label[,], -val[,],
+   -dst[,], -label[,], -val[,], -opt[,],
    -add[], -update[], -read[],
    -debug) is x ', -new[,]) is x
 -id      is x
@@ -173,6 +175,7 @@ dynamic function putjson(-id, -dst-group[], -lib[],
 -dst[,]   is x
 -label[,] is x
 -val[,]   is x
+-opt[,]     is x
 -add[]    is x
 -update[]   is x
 -read[]     is x
@@ -205,7 +208,7 @@ do while ++i < $maxarray(-dst-group[])
    out += ",dst:"
    i = i
    -val[i] = -val[i]
-   out += putdstjsonlist(-dst[i], -label[i], -val[i])
+   out += putdstjsonlist(-dst[i], -label[i], -val[i], -opt[i])
    out += "},"
 enddo
 out += "{lib:" + -lib[i]
@@ -220,7 +223,7 @@ out += ",name:'" + -dst-group[i] + "'"
       out += ",readable:true"
    endif
 out += ",dst:"
-out += putdstjsonlist(-dst[i], -label[i], -val[i]) ', -new[i])
+out += putdstjsonlist(-dst[i], -label[i], -val[i], -opt[i]) ', -new[i])
 out += "}"
 
 out += "]}"
@@ -229,10 +232,11 @@ out += "</script>"
 putjson = out
 end putjson
 
-dynamic function putdstjsonlist(-dst[], -label[], -val[]) is x ', -new[]) is x
+dynamic function putdstjsonlist(-dst[], -label[], -val[], -opt[i]) is x ', -new[]) is x
 -dst[]   is x
 -label[] is x
 -val[]   is x
+-opt[]   is x
 '-new[]   is x
 
 i        is b
@@ -244,12 +248,14 @@ do while ++i < $maxarray(-dst[])
    out += "{name:'" + -dst[i] 
    out += "',label:'" + -label[i]
    out += "',val:'" + -val[i] 
+   out += "',option:'" + -opt[i]
    out += "'},"
    'out += "',newval:'" + -new[i] + "'},"
 enddo
 out += "{name:'" + -dst[i] 
 out += "',label:'" + -label[i]
 out += "',val:'" + -val[i] 
+out += "',option:'" + -opt[i]
 out += "'}"
 'out += "',newval:'" + -new[i] + "'}"
 out += "]"

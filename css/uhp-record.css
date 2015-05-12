@@ -34,8 +34,8 @@
 .dst { 
    position: relative;
    margin: 1em;
+   width: 100%
    /*
-   width: 66%
    */
 }
 
@@ -51,6 +51,8 @@
 }
 .value {
    display: inline-block;
+   width: 40%;
+   text-align: left;
    margin-left: 2em;
 }
 
